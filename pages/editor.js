@@ -4,9 +4,9 @@ import { collection, doc, getDoc, getDocs, orderBy, query, setDoc, where, writeB
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { useDocumentData } from "react-firebase-hooks/firestore";
+import DimensionAnnotations from "../lib/dimensionAnnotations";
+import { hasUnanswered } from "../lib/dimensionQuestions";
 import { db } from './api/firebase';
-import DimensionAnnotations from "./components/dimensionAnnotations";
-import { hasUnanswered } from "./components/dimensionQuestions";
 import InlineFeedback from './components/inlineFeedback';
 
 export default function Editor() {
