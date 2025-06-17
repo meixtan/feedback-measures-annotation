@@ -41,17 +41,10 @@ export default function Home() {
       setError("All fields are required to log in.")
     } else {
       const user = await saveUser()
-      if (user.consented) {
-        router.push({
-          pathname: '/essays',
-          query: { tid: user.tid },
-        });
-      } else {
-        router.push({
-          pathname: '/essays',
-          query: { tid: user.tid },
-        });
-      }
+      router.push({
+        pathname: '/essays',
+        query: { tid: user.tid, access: access },
+      });
     }
   };
 

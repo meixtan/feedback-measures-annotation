@@ -1,5 +1,4 @@
 // components/options.js
-import { Box } from "@mui/material";
 import { collection, doc, getDoc, getDocs, orderBy, query, setDoc, where, writeBatch } from 'firebase/firestore';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
@@ -24,6 +23,8 @@ export default function Editor() {
     const [wholeCommentAnnotationData, setWholeCommentAnnotationData] = useState({});
     const [split1AnnotationData, setSplit1AnnotationData] = useState({});
     const [split2AnnotationData, setSplit2AnnotationData] = useState({});
+    const [isBadFeedback, setIsBadFeedback] = useState(false);
+    const [whyBadFeedback, SetWhyBadFeedback] = useState("");
 
     const stage = process.env.NEXT_PUBLIC_STAGE;
     const docRef = docId ? doc(db, 'feedbackEval', tid, stage, docId) : null;
@@ -57,6 +58,8 @@ export default function Editor() {
       setWholeCommentAnnotationData({});
       setSplit1AnnotationData({});
       setSplit2AnnotationData({});
+      setIsBadFeedback(false);
+      SetWhyBadFeedback("");
     }
 
     useEffect(() => {
@@ -65,6 +68,12 @@ export default function Editor() {
         resetState();
         // for the selected comment, read if we've already annotated it
         const commentRef = doc(db, 'feedbackEval', tid, stage, docId, 'feedback', selectedComment.commentId);
+        const commentSnap = await getDoc(commentRef);
+        if (commentSnap.exists()) {
+          const commentData = commentSnap.data();
+          setIsBadFeedback(commentData.isBadFeedback);
+          SetWhyBadFeedback(commentData.whyBadFeedback);
+        }
         const split1Ref = doc(commentRef, 'splits', 'split1');
         const split1Snap = await getDoc(split1Ref);
         if (split1Snap.exists()) {
@@ -125,14 +134,20 @@ export default function Editor() {
           batch.set(split2Ref, split2Meta, { merge: true });
           await batch.commit();
       } else {
-        const commentRef = doc(db, 'feedbackEval', tid, stage, docId, 'feedback', selectedComment.commentId, 'splits', 'split1');
-        const commentMeta = {
+        const split1Ref = doc(db, 'feedbackEval', tid, stage, docId, 'feedback', selectedComment.commentId, 'splits', 'split1');
+        const split1Meta = {
           ...wholeCommentAnnotationData,
           text: selectedComment.comment
         };
-        batch.set(commentRef, commentMeta, { merge: true });
+        batch.set(split1Ref, split1Meta, { merge: true });
         await batch.commit();
       }
+      const commentRef = doc(db, 'feedbackEval', tid, stage, docId, 'feedback', selectedComment.commentId);
+      const commentMeta = {
+        isBadFeedback: isBadFeedback,
+        whyBadFeedback: whyBadFeedback
+      }
+      await setDoc(commentRef, commentMeta, {merge: true});
       setSaveLoading(false);
 
       const currentIndex = commentsData.findIndex(
@@ -144,6 +159,10 @@ export default function Editor() {
         setSaveError("");
         resetState();
       } else {
+        const update = {
+          done: true
+        }
+        await setDoc(docRef, update, {merge: true});
         setSaveError("You're at the last comment already! Head back to the previous page to start on another essay :)");
       }
     };
@@ -193,32 +212,24 @@ export default function Editor() {
                   onClick={() => setSelectedComment(comment)}
                   className={`mr-2 px-4 py-2 border rounded ${
                     selectedComment === comment
-                      ? 'bg-[#e5f4f7]'
+                      ? 'bg-[#006B81] text-white'
                       : 'bg-gray-100 hover:bg-gray-200'
                   }`}
                 >
-                  {index}
+                  {index + 1}
                 </button>
               ))}
             </div>
-          {!value.done && (
-              <button key="complete"
-              onClick = {() => handleMarkComplete()}
-              className={`ml-4 mt-4 px-4 py-2 border rounded bg-gray-100 hover:bg-gray-200`}>
-                {"Mark this essay complete!"}
-            </button>
-            )
-          }
           
-          <Box display={"flex"} flexDirection={"column"}>
-            <Box sx={{ mt: 2, mb: 1 }}>
+            <div className="flex flex-col">
+            <div className="mt-2 mb-1">
               <InlineFeedback
                 sourceDocId={docId}
                 sourceTid={tid}
                 sourceTextData={value.essay}
                 sourceCommentsData={selectedComment ? [selectedComment] : []}
                 />
-              <p className="mt-2 ml-4 text-gray-700 text-left">Would it be easier to annotate this comment if it were split up?</p>
+              <p className="mt-2 ml-4 text-gray-700 text-left">Do the parts of this comment serve different functions? Would it be easier to annotate this comment if it were split up?</p>
               <button
                   key={'split'}
                   onClick={() => setSplitComment(true)}
@@ -242,7 +253,7 @@ export default function Editor() {
                 {"No, keep it together."}
               </button>
               {splitComment === false ? (
-                <DimensionAnnotations
+              <DimensionAnnotations
                   answers={wholeCommentAnnotationData}
                   onAnswersChange={setWholeCommentAnnotationData}
                 />
@@ -276,19 +287,47 @@ export default function Editor() {
                   />
                 </div>
               )}
+              <p className="mt-2 ml-4 text-gray-700 text-left">Is this "bad" feedback? Do you disagree with it or find it unhelpful for revision?</p>
+              <label key={"badfeedback"} className="ml-5 mt-2 block">
+                <input
+                  type={"checkbox"}
+                  name={"badfeedback"}
+                  value={"yes"}
+                  checked={isBadFeedback}
+                  onChange={() => setIsBadFeedback(!isBadFeedback)}
+                  className="mr-2 accent-primary"
+                />
+                {"Yes"}
+              </label>
+              {isBadFeedback &&
+                <input
+                type="text"
+                id="badfeedbackwhy"
+                value={whyBadFeedback}
+                onChange={(e) => SetWhyBadFeedback(e.target.value)}
+                className="ml-4 mt-2 w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none"
+                placeholder="Why do you find this bad feedback?"
+              />
+              }
               <button onClick={handleSaveAndNext} 
                   className={`ml-4 px-4 mt-2 py-2 border rounded text-white bg-[#006B81]`}>
                   Save & Go to the Next Comment
+              </button>
+              <button key="complete"
+                onClick = {() => handleMarkComplete()}
+                className={`ml-4 mt-4 px-4 py-2 border rounded bg-gray-100 hover:bg-gray-200`}>
+                  {"Mark this essay complete!"}
               </button>
               <button onClick={handleExit} 
                   className={`ml-4 px-4 mt-2 py-2 border rounded bg-gray-100`}>
                   Exit this Essay
               </button>
+              
               {saveLoading && (<p className="ml-4 mt-2 mb-10 text-gray-400 text-left">{'Saving...'}</p> )}
               <p className="ml-4 mt-2 mb-10 text-[#C74632] text-left">{saveError}</p> 
-            </Box>
+            </div>
             
-          </Box>
+          </div>
           
           </div>
       </div>

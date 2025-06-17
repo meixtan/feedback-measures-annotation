@@ -10,7 +10,7 @@ export default function Essays() {
   const router = useRouter();
   const [data, setData] = useState([]);
   
-  const { tid } = router.query;
+  const { tid, access } = router.query;
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -109,8 +109,8 @@ export default function Essays() {
 
   const handleNext = async () => {
     router.push({
-        pathname: '/finish',
-        query: { tid },
+        pathname: '/preference',
+        query: { tid, access },
       });
   };
 
