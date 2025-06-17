@@ -41,6 +41,8 @@ export default function Home() {
       setError("All fields are required to log in.")
     } else {
       const user = await saveUser()
+      console.log('at login')
+      console.log(access)
       router.push({
         pathname: '/essays',
         query: { tid: user.tid, access: access },

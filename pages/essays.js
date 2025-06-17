@@ -102,12 +102,14 @@ export default function Essays() {
     if (docId != "") {
         router.push({
             pathname: '/editor',
-            query: { tid, docId },
+            query: { tid, access, docId },
           });
     }
   };
 
   const handleNext = async () => {
+    console.log('next')
+    console.log(access)
     router.push({
         pathname: '/preference',
         query: { tid, access },

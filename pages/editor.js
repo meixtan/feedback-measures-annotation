@@ -10,7 +10,7 @@ import InlineFeedback from './components/inlineFeedback';
 
 export default function Editor() {
     const router = useRouter();
-    const { tid, docId } = router.query;
+    const { tid, access, docId } = router.query;
 
     const [commentsData, setCommentsData] = useState([]);
     const [selectedComment, setSelectedComment] = useState(null);
@@ -170,7 +170,7 @@ export default function Editor() {
     const handleExit = async () => {
       router.push({
           pathname: '/essays',
-          query: { tid },
+          query: { tid, access },
       });
     }
 

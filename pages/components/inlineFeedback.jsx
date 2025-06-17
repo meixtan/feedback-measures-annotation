@@ -18,7 +18,7 @@ const InlineFeedback = ({
   const [commentNodes, setCommentNodes] = useState([]);
   const annotatedTextContainerRef = useRef(null);
   const commentsContainerRef = useRef(null);
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [windowWidth, setWindowWidth] = useState(0);
 
   useEffect(() => {
     setCurrentCommentsData(sourceCommentsData);
